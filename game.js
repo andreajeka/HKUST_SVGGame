@@ -15,7 +15,6 @@ function intersect(pos1, size1, pos2, size2) {
             pos1.y < pos2.y + size2.h && pos1.y + size1.h > pos2.y);
 }
 
-
 // The player class used in this program
 function Player() {
     this.node = svgdoc.getElementById("player");
@@ -89,6 +88,7 @@ Player.prototype.collideScreen = function(position) {
 // Below are constants used in the game
 //
 var PLAYER_SIZE = new Size(40, 40);         // The size of the player
+var MONSTER_SIZE = new Size(40, 40);        // The size of a monster
 var SCREEN_SIZE = new Size(600, 560);       // The size of the game screen
 var PLAYER_INIT_POS  = new Point(0, 0);     // The initial position of the player
 
@@ -238,6 +238,9 @@ function keyup(evt) {
 // This function updates the position and motion of the player in the system
 //
 function gamePlay() {
+
+    collisionDetection();
+    
     // Check whether the player is on a platform
     var isOnPlatform = player.isOnPlatform();
     
@@ -397,7 +400,47 @@ function moveBullets() {
         if (x > SCREEN_SIZE.w || x < 0) {
             bullets.removeChild(node);
             i--;
+        }    
+    }
+}
+
+function collisionDetection() {
+    // Check whether the player collides with a monster
+    var monsters = svgdoc.getElementById("monsters");
+    for (var i = 0; i < monsters.childNodes.length; i++) {
+        var monster = monsters.childNodes.item(i);
+
+        // For each monster check if it overlaps with the player
+        // if yes, stop the game
+        var monsterX = parseInt(monster.getAttribute("x"));
+        var monsterY = parseInt(monster.getAttribute("y"));
+        if (intersect(player.position, PLAYER_SIZE, 
+            new Point(monsterX, monsterY), MONSTER_SIZE))
+            // Game over
+            clearInterval(gameInterval);
+    }
+
+    // Check whether a bullet hits a monster
+    var bullets = svgdoc.getElementById("bullets");
+    for (var i = 0; i < bullets.childNodes.length; i++) {
+        var bullet = bullets.childNodes.item(i);
+
+        // For each bullet check if it overlaps with any monster
+        // if yes, remove both the monster and the bullet
+        var bulletX = parseInt(bullet.getAttribute("x"));
+        var bulletY = parseInt(bullet.getAttribute("y"));
+
+        for (var j = 0; j < monsters.childNodes.length; j++) {
+            var monster = monsters.childNodes.item(i);
+            var monsterX = parseInt(monster.getAttribute("x"));
+            var monsterY = parseInt(monster.getAttribute("y"));
+            if (intersect(new Point(bulletX, bulletY), BULLET_SIZE, 
+                new Point(monsterX, monsterY), MONSTER_SIZE)) {
+                monsters.removeChild(monster);
+                bullets.removeChild(bullet);
+                j--;
+                i--;
+            }
         }
-            
     }
 }
