@@ -139,6 +139,12 @@ var GAME_MAP = new Array(                   // Text version of the platform desi
  "##############################"
 );
 
+var BULLET_SIZE = new Size(10, 10);         // The size of a bullet    
+var BULLET_SPEED = 10.0;                    // The speed of a bullet
+                                            // = # of pixels it moves for each game loop
+var SHOOT_INTERVAL = 200.0;                // The period when shooting is disabled (cooldown time)
+var canShoot = true;                        // A flag indicating whether the player can shoot a bullet
+
 //
 // The load function for the SVG document
 //
@@ -204,9 +210,11 @@ function keydown(evt) {
             if (player.isOnPlatform())
                 player.verticalSpeed = JUMP_SPEED;
             break;
+        case 32: // spacebar = shoot
+              if (canShoot) shootBullet();
+              break;
     }
 }
-
 
 //
 // This is the keyup handling function for the SVG document
@@ -225,7 +233,6 @@ function keyup(evt) {
             break;
     }
 }
-
 
 //
 // This function updates the position and motion of the player in the system
@@ -268,6 +275,8 @@ function gamePlay() {
 
     // Set the location back to the player object (before update the screen)
     player.position = position;
+
+    moveBullets();
 
     updateScreen();
 }
@@ -351,4 +360,44 @@ function createMonster(x,y) {
     monster.setAttribute("x", x);
     monster.setAttribute("y", y);
     monster.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#monster");
+}
+
+function shootBullet() {
+    // Disable shooting for a short period of time
+    canShoot = false;
+    setTimeout("canShoot = true", SHOOT_INTERVAL);
+
+    // Create the bullet by creating a use node
+    var bullet = svgdoc.createElementNS("http://www.w3.org/2000/svg", "use");
+   
+    // Calculate and set the position of the bullet
+    var bulletX = player.position.x + PLAYER_SIZE.w / 2 - BULLET_SIZE.w / 2 ;
+    var bulletY = player.position.y + PLAYER_SIZE.h / 2 - BULLET_SIZE.h / 2 ;
+    bullet.setAttribute("x", bulletX);
+    bullet.setAttribute("y", bulletY);
+    
+    // Set the href of the use node to the bullet defined in the defs node
+    bullet.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#bullet");
+
+    // Append the bullet to the bullet group
+     svgdoc.getElementById("bullets").appendChild(bullet);
+}
+
+function moveBullets() {
+    // Go through all bullets
+    var bullets = svgdoc.getElementById("bullets");
+    for (var i = 0; i < bullets.childNodes.length; i++) {
+        var node = bullets.childNodes.item(i);
+
+        // Update the position of the bullet
+        var x = parseInt(node.getAttribute("x"));
+        node.setAttribute("x", x + BULLET_SPEED);
+
+        // If the bullet is not inside the screen delete it from the group
+        if (x > SCREEN_SIZE.w || x < 0) {
+            bullets.removeChild(node);
+            i--;
+        }
+            
+    }
 }
