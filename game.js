@@ -187,18 +187,20 @@ function keydown(evt) {
     var keyCode = (evt.keyCode)? evt.keyCode : evt.getKeyCode();
 
     switch (keyCode) {
+        // Move left
         case "N".charCodeAt(0):
             player.motion = motionType.LEFT;
             break;
-
+        // Move right
         case "M".charCodeAt(0):
             player.motion = motionType.RIGHT;
             break;
-			
-
-        // Add your code here
-        
-
+		// Jump
+        case "Z".charCodeAt(0):
+            // only jumps if player is on the platform
+            if (player.isOnPlatform())
+                player.verticalSpeed = JUMP_SPEED;
+            break;
     }
 }
 
