@@ -108,7 +108,36 @@ var svgdoc = null;                          // SVG root document node
 var player = null;                          // The player object
 var gameInterval = null;                    // The interval
 var zoom = 1.0;                             // The zoom level of the screen
-
+var GAME_MAP = new Array(                   // Text version of the platform design
+ "                              ",
+ "                              ",
+ "                              ",
+ "###                           ",
+ "  #                           ",
+ "  ########################    ",
+ "   #       ##                 ",
+ "           ##               ##",
+ "         ######            ###",
+ "#    #             #      ####",
+ "#   ##            ####        ",
+ "########         #######      ",
+ "            #     ########    ",
+ "           ###                ",
+ "          #####             ##",
+ "      #####   ##         #####",
+ "##            ###  #          ",
+ "###             #  ###        ",
+ "######          #  ######     ",
+ "#####      #                 #",
+ "         ####               ##",
+ "        ##########         ###",
+ "       #####          #  ###  ",
+ "      ###           ###       ",
+ "##                 ###        ",
+ "###          #                ",
+ "####   #    ####         #    ",
+ "##############################"
+);
 
 //
 // The load function for the SVG document
@@ -123,6 +152,9 @@ function load(evt) {
 
     // Remove text nodes in the 'platforms' group
     cleanUpGroup("platforms", true);
+
+    // Set up the platforms
+    createPlatforms();
 
     // Create the player
     player = new Player();
@@ -249,4 +281,36 @@ function updateScreen() {
     
     // Add your code here
     
+}
+
+function createPlatforms() {
+    var platforms = svgdoc.getElementById("platforms");
+    for (var y = 0; y < GAME_MAP.length; y++) {
+        var start = null, end = null;
+        for (var x = 0; x < GAME_MAP[y].length; x++) {
+            // CASE 1 : If this is the first time defining start when '#'' is found
+            // set the start point
+            if (start == null && GAME_MAP[y].charAt(x) == "#")
+                start = x;
+            // CASE 2 : If the consecutive "#" is done, set the end point
+            if (start != null && GAME_MAP[y].charAt(x) == " ")
+                end = x - 1;
+            // CASE 3 : If we are already at the end of the game map and # is still found
+            if (start != null && x == GAME_MAP[y].length - 1)
+                end = x;
+            // If start and end points have been determined, we are ready to draw
+            if (start != null && end!= null) {
+                var platform = svgdoc.createElementNS("http://www.w3.org/2000/svg", "rect");
+                platform.setAttribute("x", start * 20);
+                platform.setAttribute("y", y * 20);
+                platform.setAttribute("width", (end - start + 1) * 20);
+                platform.setAttribute("height", 20);
+                platform.setAttribute("style", "fill:orange");
+
+                platforms.appendChild(platform);
+
+                start = end = null;
+            }
+        }
+    }
 }

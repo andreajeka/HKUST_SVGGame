@@ -33,9 +33,7 @@
         <rect x="0" y="0" width="600" height="560" style="fill:white" />
 
         <g id="platforms">
-
-          <!-- Add your platforms here -->
-
+          <!-- Blocks of platforms are added from JS dynamically -->
         </g>
 
         <g id="player">
