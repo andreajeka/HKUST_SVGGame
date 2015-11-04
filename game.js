@@ -17,6 +17,7 @@ function intersect(pos1, size1, pos2, size2) {
 
 // The player class used in this program
 function Player() {
+    this.name = name;
     this.node = svgdoc.getElementById("player");
     this.position = PLAYER_INIT_POS;
     this.motion = motionType.NONE;
@@ -106,6 +107,7 @@ var motionType = {NONE:0, LEFT:1, RIGHT:2}; // Motion enum
 
 var svgdoc = null;                          // SVG root document node
 var player = null;                          // The player object
+var name = "undefined";                     // The player's name
 var gameInterval = null;                    // The interval
 var zoom = 1.0;                             // The zoom level of the screen
 var GAME_MAP = new Array(                   // Text version of the platform design
@@ -142,13 +144,21 @@ var GAME_MAP = new Array(                   // Text version of the platform desi
 var BULLET_SIZE = new Size(10, 10);         // The size of a bullet    
 var BULLET_SPEED = 10.0;                    // The speed of a bullet
                                             // = # of pixels it moves for each game loop
-var SHOOT_INTERVAL = 200.0;                // The period when shooting is disabled (cooldown time)
+var SHOOT_INTERVAL = 200.0;                 // The period when shooting is disabled (cooldown time)
 var canShoot = true;                        // A flag indicating whether the player can shoot a bullet
+var score = 0;                              // The score of the game
 
 //
 // The load function for the SVG document
 //
 function load(evt) {
+    //hideHighScoreTable();
+
+    // Setup the player name
+    name = prompt("Please enter your name", name);
+    if (name == null)
+        name = "undefined";
+
     // Set the root node to the global variable
     svgdoc = evt.target.ownerDocument;
 
@@ -416,8 +426,7 @@ function collisionDetection() {
         var monsterY = parseInt(monster.getAttribute("y"));
         if (intersect(player.position, PLAYER_SIZE, 
             new Point(monsterX, monsterY), MONSTER_SIZE))
-            // Game over
-            clearInterval(gameInterval);
+            gameOver();
     }
 
     // Check whether a bullet hits a monster
@@ -440,7 +449,37 @@ function collisionDetection() {
                 bullets.removeChild(bullet);
                 j--;
                 i--;
+                updateScore();
             }
         }
     }
+}
+
+function updateScore() {
+    score += 10;
+    svgdoc.getElementById("score").firstChild.data = score;
+}
+
+function gameOver() {
+    // Game over
+    clearInterval(gameInterval);
+
+    var table = getHighScoreTable();
+
+    name = player.name;
+    var newRecord = new ScoreRecord(player.name, score);
+
+    // By default the new record should be pushed back to the back of the table
+    var order = table.length;
+    for (var i = 0; i < table.length; i++) {
+        if (newRecord.score > table[i].score) {
+            order = i;
+            break;
+        }
+    }
+
+    table.splice(order, 0, newRecord);
+
+    setHighScoreTable(table);
+    showHighScoreTable(table);
 }
