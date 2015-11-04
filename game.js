@@ -159,6 +159,9 @@ function load(evt) {
     // Create the player
     player = new Player();
 
+    // Create the monsters
+    createMonsters();
+
     // Start the game interval
     gameInterval = setInterval("gamePlay()", GAME_INTERVAL);
 }
@@ -334,4 +337,18 @@ function createPlatforms() {
             }
         }
     }
+}
+
+function createMonsters() {
+    createMonster(200, 15);
+    createMonster(300, 15);
+}
+
+function createMonster(x,y) {
+     // The below codes are equivalent to <use x="x'" y="y'" xlink:href="#monster"/>
+    var monster = svgdoc.createElementNS("http://www.w3.org/2000/svg", "use");
+    svgdoc.getElementById("monsters").appendChild(monster);
+    monster.setAttribute("x", x);
+    monster.setAttribute("y", y);
+    monster.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#monster");
 }
