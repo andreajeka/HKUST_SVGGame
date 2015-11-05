@@ -99,7 +99,7 @@ var JUMP_SPEED = 15;                        // The speed of the player jumping
 var VERTICAL_DISPLACEMENT = 1;              // The displacement of vertical speed
 
 var GAME_INTERVAL = 25;                     // The time interval of running the game
-
+var INITIAL_TIME_REMAINING = 60;            // The initial time remaining setup                   
 
 //
 // Variables in the game
@@ -111,6 +111,7 @@ var player = null;                          // The player object
 var name = "Anonymous";                     // The player's name
 var nameTag = null;
 var gameInterval = null;                    // The interval
+var timeRemaining = null;                   // Time remaining
 var zoom = 1.0;                             // The zoom level of the screen
 var GAME_MAP = new Array(                   // Text version of the platform design
  "                              ",
@@ -142,16 +143,29 @@ var GAME_MAP = new Array(                   // Text version of the platform desi
  "####   #    ####         #    ",
  "##############################"
 );
-
+// TODO: Make a bullet object later
 var BULLET_SIZE = new Size(10, 10);         // The size of a bullet    
 var BULLET_SPEED = 10.0;                    // The speed of a bullet
                                             // = # of pixels it moves for each game loop
 var SHOOT_INTERVAL = 200.0;                 // The period when shooting is disabled (cooldown time)
 var canShoot = true;                        // A flag indicating whether the player can shoot a bullet
 var score = 0;                              // The score of the game
-var bulletDir = motionType.RIGHT;
 
 var restartGame = false;
+
+var verticalPlatform = null;
+var isVerticalPlatformUp = true;
+
+var timeRemaining = 0;
+
+// Sound Effects
+var startSound = new Audio("theme.wav")
+var bgSound = new Audio("bg.wav");
+bgSound.loop = true;
+var shootSound = new Audio("blaster-firing.wav");
+var monsterSound = new Audio("monsterdies.wav");
+var exitPointSound = new Audio("r2d2-exitpt");
+var gameOverSound = new Audio("r2d2-die.wav");
 
 //
 // The load function for the SVG document
@@ -159,7 +173,7 @@ var restartGame = false;
 function load(evt) {
     // Set the root node to the global variable
     svgdoc = evt.target.ownerDocument;
-
+    verticalPlatform = svgdoc.getElementById("verticalplatform");
     // Hide highscore table
     var highscoretable = svgdoc.getElementById("highscoretable");
     highscoretable.style.setProperty("visibility", "hidden", null);
@@ -180,8 +194,14 @@ function load(evt) {
     // Create the monsters
     createMonsters();
 
+    // Setup moving vertical platform
+    verticalPlatform.setAttribute("y", 300);
+    isVerticalPlatformUp = true;
+
     // Start the game interval
     gameInterval = setInterval("gamePlay()", GAME_INTERVAL);
+
+    bgSound.play();
 }
 
 
@@ -294,10 +314,24 @@ function gamePlay() {
     player.position = position;
 
     moveBullets();
+    moveVerticalPlatform();
 
     updateScreen();
 }
 
+//
+// This function displays time remaining
+//
+function gameTime() {
+    timeRemaining--;
+    
+    if (timeRemaining < 0) timeRemaining = 0;
+    
+    if(timeRemaining == 0)
+        gameOver();
+
+    svgdoc.getElementById("time").firstChild.data = timeRemaining;
+}
 
 //
 // This function updates the position of the player's SVG object and
@@ -392,6 +426,11 @@ function createMonster(x,y) {
 }
 
 function shootBullet() {
+
+    // Load and play sound effect for shooting
+    shootSound.load();
+    shootSound.play();
+
     // Disable shooting for a short period of time
     canShoot = false;
     setTimeout("canShoot = true", SHOOT_INTERVAL);
@@ -404,19 +443,17 @@ function shootBullet() {
     var bulletY = player.position.y + PLAYER_SIZE.h / 2 - BULLET_SIZE.h / 2 ;
     bullet.setAttribute("x", bulletX);
     bullet.setAttribute("y", bulletY);
+    bullet.setAttribute("direction", player.currentDir);
     
     // Set the href of the use node to the bullet defined in the defs node
     bullet.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#bullet");
 
     // Append the bullet to the bullet group
     svgdoc.getElementById("bullets").appendChild(bullet);
-
-    if (player.currentDir == motionType.RIGHT)
-        bulletDir = motionType.RIGHT;
-    else
-        bulletDir = motionType.LEFT;
 }
 
+//
+// This function moves the bullet
 function moveBullets() {
     // Go through all bullets
     var bullets = svgdoc.getElementById("bullets");
@@ -425,7 +462,7 @@ function moveBullets() {
 
         // Update the position of the bullet
         var x = parseInt(node.getAttribute("x"));
-        if (bulletDir == motionType.RIGHT)
+        if (node.getAttribute("direction") == motionType.RIGHT)
             node.setAttribute("x", x + BULLET_SPEED);
         else node.setAttribute("x", x - BULLET_SPEED);
 
@@ -434,6 +471,25 @@ function moveBullets() {
             bullets.removeChild(node);
             i--;
         }    
+    }
+}
+
+//
+// This function moves the vertical platform
+//
+function moveVerticalPlatform() {
+    var y = parseInt(verticalPlatform.getAttribute("y"));
+    if(isVerticalPlatformUp) {
+        if(y > 100)
+            verticalPlatform.setAttribute("y", y - 1);
+        else
+            isVerticalPlatformUp = false;
+    }
+    else {
+        if(y < 300)
+            verticalPlatform.setAttribute("y", y + 1);
+        else
+            isVerticalPlatformUp = true;
     }
 }
 
@@ -474,6 +530,7 @@ function collisionDetection() {
                     j--;
                     i--;
                     updateScore();
+                    monsterSound.play();
                 }
             }
         }
@@ -486,8 +543,14 @@ function updateScore() {
 }
 
 function gameOver() {
-    // Game over
+
+    bgSound.pause();
+    bgSound.currentTime = 0;
+    // Load and play sound effect for gameover
+    gameOverSound.play();
+
     clearInterval(gameInterval);
+    clearInterval(timeRemainingTimer);
 
     var table = getHighScoreTable();
 
@@ -511,15 +574,25 @@ function gameOver() {
 
 function startGameAgain() {
     restartGame = true;
+    cleanUpGroup("monsters", false);
+    cleanUpGroup("bullets", false);
+    cleanUpGroup("highscoretext", false);
     startGame();
 }
 
 function startGame() {
 
+    timeRemaining = INITIAL_TIME_REMAINING;
+
     if (restartGame) {
         // Hide highscore table
         var highscoretable = svgdoc.getElementById("highscoretable");
         highscoretable.style.setProperty("visibility", "hidden", null);
+
+        // Start the game interval
+        gameInterval = setInterval("gamePlay()", GAME_INTERVAL);
+
+        svgdoc.getElementById("time").firstChild.data = timeRemaining;
     } else { //start for the first time
         //Hide the startscreen 
         var startscreen = svgdoc.getElementById("startscreen");
@@ -528,7 +601,7 @@ function startGame() {
 
     // Setup the player name
     name = prompt("Please enter your name", name);
-    if (name == "")
+    if (name == "" || name == null)
         name = "Anonymous";
 
     // Display the player name
@@ -539,4 +612,9 @@ function startGame() {
     var nameTagY = player.position.y - 5;
     nameTag.setAttribute("transform", "translate(" + 
             nameTagX + "," + nameTagY +")");
+
+    // Start the timer
+    timeRemainingTimer = setInterval("gameTime()", 1000);
+
+
 }
