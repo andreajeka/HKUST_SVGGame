@@ -22,6 +22,7 @@ function Player() {
     this.position = PLAYER_INIT_POS;
     this.motion = motionType.NONE;
     this.verticalSpeed = 0;
+    this.currentDir = motionType.RIGHT;
 }
 
 Player.prototype.isOnPlatform = function() {
@@ -108,6 +109,7 @@ var motionType = {NONE:0, LEFT:1, RIGHT:2}; // Motion enum
 var svgdoc = null;                          // SVG root document node
 var player = null;                          // The player object
 var name = "Anonymous";                     // The player's name
+var nameTag = null;
 var gameInterval = null;                    // The interval
 var zoom = 1.0;                             // The zoom level of the screen
 var GAME_MAP = new Array(                   // Text version of the platform design
@@ -147,6 +149,7 @@ var BULLET_SPEED = 10.0;                    // The speed of a bullet
 var SHOOT_INTERVAL = 200.0;                 // The period when shooting is disabled (cooldown time)
 var canShoot = true;                        // A flag indicating whether the player can shoot a bullet
 var score = 0;                              // The score of the game
+var bulletDir = motionType.RIGHT;
 
 //
 // The load function for the SVG document
@@ -204,10 +207,12 @@ function keydown(evt) {
         // Move left
         case "N".charCodeAt(0):
             player.motion = motionType.LEFT;
+            player.currentDir = motionType.LEFT;
             break;
         // Move right
         case "M".charCodeAt(0):
             player.motion = motionType.RIGHT;
+            player.currentDir = motionType.RIGHT;
             break;
 		// Jump
         case "Z".charCodeAt(0):
@@ -296,9 +301,21 @@ function gamePlay() {
 // the position of the player
 //
 function updateScreen() {
-    // Transform the player
-    player.node.setAttribute("transform", "translate(" + player.position.x + "," + player.position.y + ")");
-            
+    // Transform the player according to direction
+    if (player.currentDir== motionType.LEFT)
+        player.node.setAttribute("transform", "translate(" + 
+            (PLAYER_SIZE.w + player.position.x) + "," + player.position.y+") scale(-1, 1)");
+    else 
+        player.node.setAttribute("transform", "translate(" + player.position.x + "," + player.position.y + ")");
+
+    // Player's name moves along with the player
+    if (nameTag != null) {
+      var nameTagX = player.position.x + 15;
+      var nameTagY = player.position.y - 5;
+      nameTag.setAttribute("transform", "translate(" + 
+            nameTagX + "," + nameTagY +")");
+  }
+
     // Calculate the scaling and translation factors
     var scale = new Point(zoom, zoom);
     var translate = new Point();
@@ -388,7 +405,12 @@ function shootBullet() {
     bullet.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#bullet");
 
     // Append the bullet to the bullet group
-     svgdoc.getElementById("bullets").appendChild(bullet);
+    svgdoc.getElementById("bullets").appendChild(bullet);
+
+    if (player.currentDir == motionType.RIGHT)
+        bulletDir = motionType.RIGHT;
+    else
+        bulletDir = motionType.LEFT;
 }
 
 function moveBullets() {
@@ -399,7 +421,9 @@ function moveBullets() {
 
         // Update the position of the bullet
         var x = parseInt(node.getAttribute("x"));
-        node.setAttribute("x", x + BULLET_SPEED);
+        if (bulletDir == motionType.RIGHT)
+            node.setAttribute("x", x + BULLET_SPEED);
+        else node.setAttribute("x", x - BULLET_SPEED);
 
         // If the bullet is not inside the screen delete it from the group
         if (x > SCREEN_SIZE.w || x < 0) {
@@ -436,15 +460,17 @@ function collisionDetection() {
 
         for (var j = 0; j < monsters.childNodes.length; j++) {
             var monster = monsters.childNodes.item(i);
-            var monsterX = parseInt(monster.getAttribute("x"));
-            var monsterY = parseInt(monster.getAttribute("y"));
-            if (intersect(new Point(bulletX, bulletY), BULLET_SIZE, 
-                new Point(monsterX, monsterY), MONSTER_SIZE)) {
-                monsters.removeChild(monster);
-                bullets.removeChild(bullet);
-                j--;
-                i--;
-                updateScore();
+            if (monster != null) {
+                var monsterX = parseInt(monster.getAttribute("x"));
+                var monsterY = parseInt(monster.getAttribute("y"));
+                if (intersect(new Point(bulletX, bulletY), BULLET_SIZE, 
+                    new Point(monsterX, monsterY), MONSTER_SIZE)) {
+                    monsters.removeChild(monster);
+                    bullets.removeChild(bullet);
+                    j--;
+                    i--;
+                    updateScore();
+                }
             }
         }
     }
@@ -480,11 +506,23 @@ function gameOver() {
 }
 
 function startGame() {
+    //Hide the startscreen
     var startscreen = svgdoc.getElementById("startscreen");
     startscreen.style.setProperty("visibility", "hidden", null);
 
     // Setup the player name
     name = prompt("Please enter your name", name);
-    if (name == null)
+    if (name == "")
         name = "Anonymous";
+
+    // Display the player name
+    nameTag = svgdoc.getElementById("player_name");
+    nameTag.firstChild.data = name;
+    nameTag.setAttribute("x", player.position.x);
+    nameTag.setAttribute("y", player.position.y - 5);
+
+    var nameTagX = player.position.x;
+    var nameTagY = player.position.y - 5;
+    nameTag.setAttribute("transform", "translate(" + 
+            nameTagX + "," + nameTagY +")");
 }

@@ -18,10 +18,10 @@ collected player can finish the game or get to the next level.
     2. [x] Give a general introduction to the game and tell the player what he/she needs to do
     3. [x] Say what keys the user needs to press to play the game (left/right/jump/shoot)
 2. [ ] Handling of player - 10%
-    1. [ ] Flip player when move left or right - 2 marks
-    2. [ ] THe player can jump / move left / move right / shoot at any platform - 2marks
+    1. [x] Flip player when move left or right - 2 marks
+    2. [x] THe player can jump / move left / move right / shoot at any platform - 2marks
     3. [ ] Appropriate visual impact for the player - 2 marks
-    4. [ ] The player name is appropriately shown at the top of the player, with `Anonymous` used as the name if the user enters an empty string - 2marks
+    4. [x] The player name is appropriately shown at the top of the player, with `Anonymous` used as the name if the user enters an empty string - 2marks
     5. [ ] The player dies if it touches any monster - 2 marks
 3. [ ] Handling of monsters - 12%
     1. [ ] There must be at least 6 monsters
