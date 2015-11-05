@@ -13,10 +13,10 @@ collected player can finish the game or get to the next level.
 [ ] Player can shoot monsters to get additional score
 
 
-1. [ ] Starting screen - 4%
-	1. [ ] Include the title of the game and your name
-    2. [ ] Give a general introduction to the game and tell the player what he/she needs to do
-    3. [ ] Say what keys the user needs to press to play the game (left/right/jump/shoot)
+1. [x] Starting screen - 4%
+	1. [x] Include the title of the game and your name
+    2. [x] Give a general introduction to the game and tell the player what he/she needs to do
+    3. [x] Say what keys the user needs to press to play the game (left/right/jump/shoot)
 2. [ ] Handling of player - 10%
     1. [ ] Flip player when move left or right - 2 marks
     2. [ ] THe player can jump / move left / move right / shoot at any platform - 2marks

@@ -88,8 +88,8 @@ Player.prototype.collideScreen = function(position) {
 //
 // Below are constants used in the game
 //
-var PLAYER_SIZE = new Size(40, 40);         // The size of the player
-var MONSTER_SIZE = new Size(40, 40);        // The size of a monster
+var PLAYER_SIZE = new Size(33, 43);         // The size of the player
+var MONSTER_SIZE = new Size(40, 60);        // The size of a monster
 var SCREEN_SIZE = new Size(600, 560);       // The size of the game screen
 var PLAYER_INIT_POS  = new Point(0, 0);     // The initial position of the player
 
@@ -107,7 +107,7 @@ var motionType = {NONE:0, LEFT:1, RIGHT:2}; // Motion enum
 
 var svgdoc = null;                          // SVG root document node
 var player = null;                          // The player object
-var name = "undefined";                     // The player's name
+var name = "Anonymous";                     // The player's name
 var gameInterval = null;                    // The interval
 var zoom = 1.0;                             // The zoom level of the screen
 var GAME_MAP = new Array(                   // Text version of the platform design
@@ -153,11 +153,6 @@ var score = 0;                              // The score of the game
 //
 function load(evt) {
     //hideHighScoreTable();
-
-    // Setup the player name
-    name = prompt("Please enter your name", name);
-    if (name == null)
-        name = "undefined";
 
     // Set the root node to the global variable
     svgdoc = evt.target.ownerDocument;
@@ -362,8 +357,8 @@ function createPlatforms() {
 }
 
 function createMonsters() {
-    createMonster(200, 15);
-    createMonster(300, 15);
+    createMonster(200,75);
+    createMonster(300, 75);
 }
 
 function createMonster(x,y) {
@@ -482,4 +477,14 @@ function gameOver() {
 
     setHighScoreTable(table);
     showHighScoreTable(table);
+}
+
+function startGame() {
+    var startscreen = svgdoc.getElementById("startscreen");
+    startscreen.style.setProperty("visibility", "hidden", null);
+
+    // Setup the player name
+    name = prompt("Please enter your name", name);
+    if (name == null)
+        name = "Anonymous";
 }
