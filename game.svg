@@ -221,7 +221,6 @@
         <g id="player_name">
           <text id="name_text" x="0" y="0" 
             style="fill:cadetblue;font-size:16px;text-anchor:middle">
-            Anonymous
           </text>
         </g>
 
@@ -286,12 +285,16 @@
           </g>
         </g>
 
-<!--         <g id="highscoretable" transform="translate(40,40)">
+        <g id="highscoretable" transform="translate(40,40)">
           <rect width="520" height="480" style="fill:white;stroke:red;stroke-width:2"/>
-          <text x="260" y="40" style="fill:red;font-size:30px;font-weight:bold;text-anchor:middle"> High Score Table </text>
-          <text id="highscoretext" y="45" style="font-size: 20px;font-weight:bold"/>
-        </g> -->
-
+          <text x="260" y="50" style="fill:red;font-size:50px;font-weight:bold;text-anchor:middle"> Game Over </text>
+          <text x="260" y="90" style="fill:red;font-size:30px;font-weight:bold;text-anchor:middle"> High Score Table </text>
+          <text id="highscoretext" y="100" style="font-size: 20px;font-weight:bold"/>
+          <g onclick="top.startGameAgain()">
+            <rect class="button" x="160" y="420" width="200" height="40" rx="10" ry="10" style="fill:white;stroke:red;stroke-width:2"/>
+            <text x="260" y="450" style="fill:red;font-size:30px;font-weight:bold;text-anchor:middle">Start Again</text>
+          </g>
+        </g>
       </g>
     </g>
   </g>

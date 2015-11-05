@@ -67,7 +67,7 @@ function addHighScore(record, node) {
     // Set the attributes and create the text
     name.setAttribute("x", 100);
 
-    var dy = node.getAttribute("y");
+    var dy = 30;
     name.setAttribute("dy", dy)
 
     // Add the name to the text node

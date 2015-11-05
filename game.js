@@ -151,14 +151,18 @@ var canShoot = true;                        // A flag indicating whether the pla
 var score = 0;                              // The score of the game
 var bulletDir = motionType.RIGHT;
 
+var restartGame = false;
+
 //
 // The load function for the SVG document
 //
 function load(evt) {
-    //hideHighScoreTable();
-
     // Set the root node to the global variable
     svgdoc = evt.target.ownerDocument;
+
+    // Hide highscore table
+    var highscoretable = svgdoc.getElementById("highscoretable");
+    highscoretable.style.setProperty("visibility", "hidden", null);
 
     // Attach keyboard events
     svgdoc.documentElement.addEventListener("keydown", keydown, false);
@@ -505,10 +509,22 @@ function gameOver() {
     showHighScoreTable(table);
 }
 
+function startGameAgain() {
+    restartGame = true;
+    startGame();
+}
+
 function startGame() {
-    //Hide the startscreen
-    var startscreen = svgdoc.getElementById("startscreen");
-    startscreen.style.setProperty("visibility", "hidden", null);
+
+    if (restartGame) {
+        // Hide highscore table
+        var highscoretable = svgdoc.getElementById("highscoretable");
+        highscoretable.style.setProperty("visibility", "hidden", null);
+    } else { //start for the first time
+        //Hide the startscreen 
+        var startscreen = svgdoc.getElementById("startscreen");
+        startscreen.style.setProperty("visibility", "hidden", null);
+    }
 
     // Setup the player name
     name = prompt("Please enter your name", name);
@@ -517,9 +533,7 @@ function startGame() {
 
     // Display the player name
     nameTag = svgdoc.getElementById("player_name");
-    nameTag.firstChild.data = name;
-    nameTag.setAttribute("x", player.position.x);
-    nameTag.setAttribute("y", player.position.y - 5);
+    nameTag.firstElementChild.textContent = name;
 
     var nameTagX = player.position.x;
     var nameTagY = player.position.y - 5;
