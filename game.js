@@ -90,7 +90,7 @@ Player.prototype.collideScreen = function(position) {
 // Below are constants used in the game
 //
 var PLAYER_SIZE = new Size(33, 43);         // The size of the player
-var MONSTER_SIZE = new Size(40, 60);        // The size of a monster
+var MONSTER_SIZE = new Size(40, 55);        // The size of a monster
 var SCREEN_SIZE = new Size(600, 560);       // The size of the game screen
 var PLAYER_INIT_POS  = new Point(0, 0);     // The initial position of the player
 
@@ -119,13 +119,13 @@ var GAME_MAP = new Array(                   // Text version of the platform desi
  "                              ",
  "###                           ",
  "  #                           ",
- "  ########################    ",
+ "  #######    ############     ",
  "   #       ##                 ",
- "           ##               ##",
- "         ######            ###",
- "#    #             #      ####",
- "#   ##            ####        ",
- "########         #######      ",
+ "                            ##",
+ "                           ###",
+ "#                  #      ####",
+ "#                 ####        ",
+ "####             #######      ",
  "            #     ########    ",
  "           ###                ",
  "          #####             ##",
@@ -156,7 +156,13 @@ var restartGame = false;
 var verticalPlatform = null;
 var isVerticalPlatformUp = true;
 
+var fadingPlatform1 = null;
+var fadingPlatform2 = null;
+var fadingPlatform3 = null;
+
 var timeRemaining = 0;
+
+var cheatMode = false;
 
 // Sound Effects
 var startSound = new Audio("theme.wav")
@@ -193,6 +199,9 @@ function load(evt) {
 
     // Create the monsters
     createMonsters();
+
+    // Create disappearing platforms
+    createFadingPlatforms();
 
     // Setup moving vertical platform
     verticalPlatform.setAttribute("y", 300);
@@ -247,6 +256,14 @@ function keydown(evt) {
         case 32: // spacebar = shoot
               if (canShoot) shootBullet();
               break;
+        // Activate cheat mode
+        case "C".charCodeAt(0):
+            cheatMode = true;
+            break;
+        // Deactivate cheat mode
+        case "V".charCodeAt(0):
+            cheatMode = false;
+            break;
     }
 }
 
@@ -411,13 +428,39 @@ function createPlatforms() {
     }
 }
 
+function createFadingPlatforms() {
+    fadingPlatform1 = svgdoc.createElementNS("http://www.w3.org/2000/svg", "rect");
+    fadingPlatform1.setAttribute("x", 180);
+    fadingPlatform1.setAttribute("y", 100);
+    fadingPlatform1.setAttribute("width", 80);
+    fadingPlatform1.setAttribute("height", 20);
+    fadingPlatform1.setAttribute("style", "fill:grey; fill-opacity:1");
+    svgdoc.getElementById("platforms").appendChild(fadingPlatform1);
+    
+    fadingPlatform2 = svgdoc.createElementNS("http://www.w3.org/2000/svg", "rect");
+    fadingPlatform2.setAttribute("x", 80);
+    fadingPlatform2.setAttribute("y", 220);
+    fadingPlatform2.setAttribute("width", 80);
+    fadingPlatform2.setAttribute("height", 20);
+    fadingPlatform2.setAttribute("style", "fill:grey; fill-opacity:1");
+    svgdoc.getElementById("platforms").appendChild(fadingPlatform2);
+    
+    fadingPlatform3 = svgdoc.createElementNS("http://www.w3.org/2000/svg", "rect");
+    fadingPlatform3.setAttribute("x", 280);
+    fadingPlatform3.setAttribute("y", 420);
+    fadingPlatform3.setAttribute("width", 80);
+    fadingPlatform3.setAttribute("height", 20);
+    fadingPlatform3.setAttribute("style", "fill:grey; fill-opacity:1");
+    svgdoc.getElementById("platforms").appendChild(fadingPlatform3);
+}
+
 function createMonsters() {
-    createMonster(200,75);
-    createMonster(300, 75);
+    createMonster(200,40);
+    createMonster(300,40);
 }
 
 function createMonster(x,y) {
-     // The below codes are equivalent to <use x="x'" y="y'" xlink:href="#monster"/>
+    // The below codes are equivalent to <use x="x'" y="y'" xlink:href="#monster"/>
     var monster = svgdoc.createElementNS("http://www.w3.org/2000/svg", "use");
     svgdoc.getElementById("monsters").appendChild(monster);
     monster.setAttribute("x", x);
@@ -508,6 +551,20 @@ function collisionDetection() {
             gameOver();
     }
 
+    // Check whether the player is on the disappearing platforms
+    if(fadingPlatform1 != null && (player.position.x + PLAYER_SIZE.w > 180 && player.position.x + PLAYER_SIZE.w < 260) && (player.position.y + PLAYER_SIZE.h == 100)) {
+        removePlatform(fadingPlatform1);
+        fadingPlatform1 = null;
+    }
+    if(fadingPlatform2 != null && (player.position.x + PLAYER_SIZE.w > 80 && player.position.x + PLAYER_SIZE.w < 160) && (player.position.y + PLAYER_SIZE.h == 220)) {
+        removePlatform(fadingPlatform2);
+        fadingPlatform2 = null;
+    }
+    if(fadingPlatform3 != null && (player.position.x + PLAYER_SIZE.w > 280 && player.position.x + PLAYER_SIZE.w < 360) && (player.position.y + PLAYER_SIZE.h == 420)) {
+        removePlatform(fadingPlatform3);
+        fadingPlatform3 = null;
+    }
+
     // Check whether a bullet hits a monster
     var bullets = svgdoc.getElementById("bullets");
     for (var i = 0; i < bullets.childNodes.length; i++) {
@@ -535,6 +592,20 @@ function collisionDetection() {
             }
         }
     }
+}
+
+function removePlatform(fadingPlatform) {
+    var animate = svgdoc.createElementNS("http://www.w3.org/2000/svg", "animateColor");
+    animate.setAttribute("attributeName", "fill");
+    animate.setAttribute("attributeType", "CSS");
+    animate.setAttribute("from", "grey");
+    animate.setAttribute("to", "white");
+    animate.setAttribute("begin", "0s");
+    animate.setAttribute("dur", "0.5s");
+    animate.setAttribute("fill", "freeze");
+    fadingPlatform.appendChild(animate);
+    //setTimeout(function(){disappearingPlatform.style.setAttribute("fill-opacity", disappearingPlatform.style.getAttribute("fill-opacity") - 0.1);}, 50);
+    setTimeout(function(){fadingPlatform.parentNode.removeChild(fadingPlatform);}, 500);
 }
 
 function updateScore() {
