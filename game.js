@@ -177,6 +177,8 @@ var isInPortalRange = false;
 
 var GOOD_THING_SIZE = new Size(30, 30);
 
+var EXIT_SIZE = new Size(90,123);
+
 var restartGame = false;
 
 var verticalPlatform = null;
@@ -233,6 +235,9 @@ function load(evt) {
 
     // Create disappearing platforms
     createFadingPlatforms();
+
+    // Create exit door
+    createExitDoor();
 
     // Create good things
     createGoodThings();
@@ -570,6 +575,9 @@ function createGoodThings() {
     var fadingPlatform3Y = parseInt(fadingPlatform3.getAttribute("y"));
     var fadingPlatform3W = parseInt(fadingPlatform3.getAttribute("width"));
     var fadingPlatform3H = parseInt(fadingPlatform3.getAttribute("height"));
+    var exitDoor = svgdoc.getElementById("exitdoor").childNodes.item(0);
+    var exitX = parseInt(exitDoor.getAttribute("x"));
+    var exitY = parseInt(exitDoor.getAttribute("y"));
     
     var numOfGoodThings = 0;
 
@@ -586,7 +594,7 @@ function createGoodThings() {
                 var platY = parseInt(node.getAttribute("y"));
                 var platW = parseInt(node.getAttribute("width"));
                 var platH = parseInt(node.getAttribute("height"));
-                // If collide to the platform, the user, the fading platform, and vertical platform
+                // Not eligible if collide with the platform, the user, the fading platform, and vertical platform, exit door                
                 if(intersect(new Point(randomX,randomY), GOOD_THING_SIZE, new Point(platX, platY), new Size(platW, platH))  
                     || intersect(new Point(randomX,randomY), GOOD_THING_SIZE, player.position, PLAYER_SIZE) 
                     || intersect(new Point(randomX,randomY), GOOD_THING_SIZE, 
@@ -596,7 +604,9 @@ function createGoodThings() {
                     || intersect(new Point(randomX, randomY), GOOD_THING_SIZE, 
                         new Point(fadingPlatform2X, fadingPlatform2Y), new Size(fadingPlatform2W, fadingPlatform2H))
                     || intersect(new Point(randomX, randomY), GOOD_THING_SIZE, 
-                        new Point(fadingPlatform3X, fadingPlatform3Y), new Size(fadingPlatform3W, fadingPlatform3H)))  {
+                        new Point(fadingPlatform3X, fadingPlatform3Y), new Size(fadingPlatform3W, fadingPlatform3H))
+                    || intersect(new Point(randomX, randomY), GOOD_THING_SIZE, 
+                        new Point(exitX, exitY), EXIT_SIZE))  {
                         eligible = false;
                         break;
                 }
@@ -613,6 +623,16 @@ function createGoodThings() {
         }
     }
 }
+
+
+function createExitDoor() {
+    var exit = svgdoc.createElementNS("http://www.w3.org/2000/svg", "use");
+    exit.setAttribute("x", 550);
+    exit.setAttribute("y", 480);
+    exit.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#exit");
+    svgdoc.getElementById("exitdoor").appendChild(exit);
+}
+
 
 function shootBullet() {
 
@@ -786,7 +806,6 @@ function collisionDetection() {
     }
 
     // Check whether the player enters the portal
-    // TODO: Enhance portal mechanism using range instead of cooldown
     var portal1 = svgdoc.getElementById("portal1");
     var portal2 = svgdoc.getElementById("portal2");
     var portal1x = parseInt(portal1.getAttribute("x"));
@@ -795,28 +814,42 @@ function collisionDetection() {
     var portal2y = parseInt(portal2.getAttribute("y"));
     var dispFactor = (PORTAL_ACTIVATION_RANGE.x - PORTAL_SIZE.x)/2; // x and y will be the same
 
-        if (intersect(new Point(portal1x, portal1y), PORTAL_SIZE, player.position, PLAYER_SIZE) && !enterPortal) {
-            player.position.x = portal2x;
-            player.position.y = portal2y;
-            enterPortal = true;
-            // isInPortalRange = true;
+    if (intersect(new Point(portal1x, portal1y), PORTAL_SIZE, player.position, PLAYER_SIZE) && !enterPortal) {
+        player.position.x = portal2x;
+        player.position.y = portal2y;
+        enterPortal = true;
+        setTimeout(
+            function() { 
+                enterPortal = false;
+            }, 3000);
+    }
+    if (intersect(new Point(portal2x, portal2y), PORTAL_SIZE, player.position, PLAYER_SIZE) && !enterPortal) {
+        player.position.x = portal1x;
+        player.position.y = portal1y;
+        enterPortal = true;
+        setTimeout(
+            function() { 
+                enterPortal = false;
+            }, 3000);
+    }
 
-            // if (!intersect(new Point(portal2x - dispFactor, portal2y - dispFactor), PORTAL_ACTIVATION_RANGE, player.position, PLAYER_SIZE))
-            //     isInPortalRange = false;
-            setTimeout(function(){enterPortal = false;}, 2000);
-        }
-        if (intersect(new Point(portal2x, portal2y), PORTAL_SIZE, player.position, PLAYER_SIZE) && !enterPortal) {
-            player.position.x = portal1x;
-            player.position.y = portal1y;
-            enterPortal = true;
-            // isInPortalRange = true;
-            
-            // if (!intersect(new Point(portal1x - dispFactor, portal1y - dispFactor), PORTAL_ACTIVATION_RANGE, player.position, PLAYER_SIZE))
-            //     isInPortalRange = false;
-            setTimeout(function(){enterPortal = false;}, 2000);
-        }
-
-      //  if (!isInPortalRange) enterPortal = false;
+    // Check whether the player tries to enter exit door
+    // TODO
+    var exit = svgdoc.getElementById("exitdoor").childNodes.item(0);
+    var exitX = parseInt(exit.getAttribute("x"));
+    var exitY = parseInt(exit.getAttribute("y"));
+    if(intersect(new Point(exitX, exitY), EXIT_SIZE, player.position, PLAYER_SIZE) 
+        && goodThings.childNodes.length == 0) {
+        gameOver();
+        //exitPointSound.play();
+        // if(isZoomMode)
+        //     score = score + level * 100 + timeRemaining * 2;
+        // else
+        //     score = score + level * 100 + timeRemaining;
+        // svgdoc.getElementById("score").firstChild.data = score;
+        //initializeStage();
+      //  return;   
+    }
 }
 
 function removePlatform(fadingPlatform) {

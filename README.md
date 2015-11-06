@@ -10,7 +10,7 @@ collected player can finish the game or get to the next level.
 
 [ ] Monster appears randomly. Player dies if it touches a monster.
 
-[ ] Player can shoot monsters to get additional score
+[x] Player can shoot monsters to get additional score
 
 
 1. [x] Starting screen - 4%
