@@ -151,6 +151,11 @@ var SHOOT_INTERVAL = 200.0;                 // The period when shooting is disab
 var canShoot = true;                        // A flag indicating whether the player can shoot a bullet
 var score = 0;                              // The score of the game
 
+var PORTAL_SIZE = new Size(60, 60);
+var PORTAL_ACTIVATION_RANGE = new Size(90, 90);
+var enterPortal = false;
+var isInPortalRange = false;
+
 var restartGame = false;
 
 var verticalPlatform = null;
@@ -199,6 +204,9 @@ function load(evt) {
 
     // Create the monsters
     createMonsters();
+
+    // Create portal
+    createPortals();
 
     // Create disappearing platforms
     createFadingPlatforms();
@@ -468,6 +476,20 @@ function createMonster(x,y) {
     monster.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#monster");
 }
 
+function createPortals() {
+    createPortal (530, 10, "portal1");
+    createPortal (0, 400, "portal2");
+}
+
+function createPortal(x,y,id) {
+    var portal = svgdoc.createElementNS("http://www.w3.org/2000/svg", "use");
+    svgdoc.getElementById("portals").appendChild(portal);
+    portal.setAttribute("x", x);
+    portal.setAttribute("y", y);
+    portal.setAttribute("id", id);
+    portal.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#portal");
+}
+
 function shootBullet() {
 
     // Load and play sound effect for shooting
@@ -592,6 +614,39 @@ function collisionDetection() {
             }
         }
     }
+
+    // Check whether the player enters the portal
+    // TODO: Enhance portal mechanism using range instead of cooldown
+    var portal1 = svgdoc.getElementById("portal1");
+    var portal2 = svgdoc.getElementById("portal2");
+    var portal1x = parseInt(portal1.getAttribute("x"));
+    var portal1y = parseInt(portal1.getAttribute("y"));
+    var portal2x = parseInt(portal2.getAttribute("x"));
+    var portal2y = parseInt(portal2.getAttribute("y"));
+    var dispFactor = (PORTAL_ACTIVATION_RANGE.x - PORTAL_SIZE.x)/2; // x and y will be the same
+
+        if (intersect(new Point(portal1x, portal1y), PORTAL_SIZE, player.position, PLAYER_SIZE) && !enterPortal) {
+            player.position.x = portal2x;
+            player.position.y = portal2y;
+            enterPortal = true;
+            // isInPortalRange = true;
+
+            // if (!intersect(new Point(portal2x - dispFactor, portal2y - dispFactor), PORTAL_ACTIVATION_RANGE, player.position, PLAYER_SIZE))
+            //     isInPortalRange = false;
+            setTimeout(function(){enterPortal = false;}, 2000);
+        }
+        if (intersect(new Point(portal2x, portal2y), PORTAL_SIZE, player.position, PLAYER_SIZE) && !enterPortal) {
+            player.position.x = portal1x;
+            player.position.y = portal1y;
+            enterPortal = true;
+            // isInPortalRange = true;
+            
+            // if (!intersect(new Point(portal1x - dispFactor, portal1y - dispFactor), PORTAL_ACTIVATION_RANGE, player.position, PLAYER_SIZE))
+            //     isInPortalRange = false;
+            setTimeout(function(){enterPortal = false;}, 2000);
+        }
+
+      //  if (!isInPortalRange) enterPortal = false;
 }
 
 function removePlatform(fadingPlatform) {
@@ -672,7 +727,7 @@ function startGame() {
 
     // Setup the player name
     name = prompt("Please enter your name", name);
-    if (name == "" || name == null)
+    if (name == "" || name == null || !name)
         name = "Anonymous";
 
     // Display the player name
@@ -684,8 +739,8 @@ function startGame() {
     nameTag.setAttribute("transform", "translate(" + 
             nameTagX + "," + nameTagY +")");
 
+    enterPortal = false;
+    
     // Start the timer
     timeRemainingTimer = setInterval("gameTime()", 1000);
-
-
 }

@@ -42,9 +42,9 @@ collected player can finish the game or get to the next level.
  	1. [x] There are three disappearing platforms (stand for a certain period of time like 0.5 second, the platform will disappear and player fall down) - 3 marks
     2. [ ] Appropriate visual change in opacity - 2 marks
     3  [x] Gone platform will not come back
-7. [ ] Transmission portal - 4%
-	1. [ ] Two portals appeared on the screen - 2 marks
-    2. [ ] When player enters into one portal, it will appear at the position of another portal - 2 marks
+7. [x] Transmission portal - 4%
+	1. [x] Two portals appeared on the screen - 2 marks
+    2. [x] When player enters into one portal, it will appear at the position of another portal - 2 marks
 8. [ ] Shooting - 6%
 	1. [ ] A player gets 8 bullets at the start of the game for each level. Number of remaining bullets are shown in GUI - 2 marks
     2. [x] When face right or left bullet moves according to the player orientation and removed if out of screen - 2 marks for each orientation
