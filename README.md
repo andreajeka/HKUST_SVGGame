@@ -27,15 +27,15 @@ collected player can finish the game or get to the next level.
     1. [ ] There must be at least 6 monsters
     2. [ ] Appropriate visual impact - 2 marks
     3. [ ] Some appropriate animation of monsters (using any SVG animation command except animateColor) - 2 marks
-    4. [ ] The monster move smoothly from one random location to another random location - 2marks
-    5. [ ] Flip monster when move left/right - 2 marks
+    4. [x] The monster move smoothly from one random location to another random location - 2marks
+    5. [x] Flip monster when move left/right - 2 marks
     6. [ ] There has to be exactly one special monster which can shoot bullet. There has at most one bullet in game window from the monster at a time- 2 marks
 4. [ ] Handling of good things - 6%
-    1. [ ] There must be at least 8 good things
-    2. [ ] Appropriate visual impact - 1 mark
-    3. [ ] Generated at random places at the start of game  - 1 mark
-    4. [ ] Don't overlap with platforms - 1 mark
-    5. [ ] Player collect good things by touching them, good things deleted from DOM - 1 mark
+    1. [x] There must be at least 8 good things
+    2. [x] Appropriate visual impact - 1 mark
+    3. [x] Generated at random places at the start of game  - 1 mark
+    4. [x] Don't overlap with platforms - 1 mark
+    5. [x] Player collect good things by touching them, good things deleted from DOM - 1 mark
     6. [ ] All good things should be collected before can go to next level - 2 marks
 5. [x] One vertical platform move up and down - 4%
 6. [x] Disappearing platforms - 5%
@@ -45,8 +45,8 @@ collected player can finish the game or get to the next level.
 7. [x] Transmission portal - 4%
 	1. [x] Two portals appeared on the screen - 2 marks
     2. [x] When player enters into one portal, it will appear at the position of another portal - 2 marks
-8. [ ] Shooting - 6%
-	1. [ ] A player gets 8 bullets at the start of the game for each level. Number of remaining bullets are shown in GUI - 2 marks
+8. [x] Shooting - 6%
+	1. [x] A player gets 8 bullets at the start of the game for each level. Number of remaining bullets are shown in GUI - 2 marks
     2. [x] When face right or left bullet moves according to the player orientation and removed if out of screen - 2 marks for each orientation
 9. [x] Sound - 5%, one mark each for shooting, reach exit point, player dies, monster dies, continuous music
 10. [x] Time remaining - 4%
