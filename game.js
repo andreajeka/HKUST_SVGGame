@@ -37,6 +37,12 @@ function Monster() {
     this.flip = false;
 }
 
+function SpecialBullet() {
+    this.node = null;
+    this.position = new Point(0,0);
+    this.currentDir = motionType.NONE;
+}
+
 Player.prototype.isOnPlatform = function() {
     var platforms = svgdoc.getElementById("platforms");
     for (var i = 0; i < platforms.childNodes.length; i++) {
@@ -101,25 +107,28 @@ Player.prototype.collideScreen = function(position) {
 //
 // Below are constants used in the game
 //
-var PLAYER_SIZE = new Size(33, 43);         // The size of the player
-var MONSTER_SIZE = new Size(40, 55);        // The size of a monster
+var PLAYER_SIZE = new Size(30, 43);         // The size of the player
+var MONSTER_SIZE = new Size(45, 48);        // The size of a monster
+var SPECIAL_MONSTER_SIZE = new Size(70,35); // The size of a special monster
 var SCREEN_SIZE = new Size(600, 560);       // The size of the game screen
 var PLAYER_INIT_POS  = new Point(0, 0);     // The initial position of the player
 var PLAYER_INIT_AMMO = 8;                   // The initial ammunition for the player
 
 var MOVE_DISPLACEMENT = 5;                  // The speed of the player in motion
-var MONSTER_MOVE_DISPLACEMENT = 1;                  // The speed of the player in motion
+var MONSTER_MOVE_DISPLACEMENT = 1;          // The speed of the player in motion
 var JUMP_SPEED = 15;                        // The speed of the player jumping
 var VERTICAL_DISPLACEMENT = 1;              // The displacement of vertical speed
 
 var GAME_INTERVAL = 25;                     // The time interval of running the game
 var INITIAL_TIME_REMAINING = 60;            // The initial time remaining setup                   
 
+
+
 //
 // Variables in the game
 //
 var motionType = {NONE:0, LEFT:1, RIGHT:2}; // Motion enum
-var scoreType = {MONSTER:0, GOODTHING:1}; // Motion enum
+var scoreType = {MONSTER:0, GOODTHING:1, NEXTLEVEL:2, RESTART:3}; // Motion enum
 
 var svgdoc = null;                          // SVG root document node
 var player = null;                          // The player object
@@ -132,36 +141,102 @@ var zoom = 1.0;                             // The zoom level of the screen
 
 var monsterArray = [];
 
-var GAME_MAP = new Array(                   // Text version of the platform design
+var currentLevel = 1;
+
+var GAME_MAP1 = new Array(                   // Text version of the platform design
  "                              ",
  "                              ",
  "                              ",
  "###                           ",
  "  #                           ",
- "  #######    ############     ",
- "   #       ##                 ",
- "                            ##",
- "                           ###",
- "#                  #      ####",
- "#                 ####        ",
- "####             #######      ",
- "            #     ########    ",
+ "  #####     ##########        ",
+ "            #                 ",
+ "            #               ##",
+ "         ####              ###",
+ "#      ##          #       ###",
+ "#     #           ####        ",
+ "######           ### #        ",
+ "            #     ##          ",
  "           ###                ",
  "          #####             ##",
- "      #####   ##         #####",
- "##            ###  #          ",
- "###             #  ###        ",
- "######          #  ######     ",
+ "          #   ##           ###",
+ "##            ###    #        ",
+ "###             #   ##        ",
+ "####            #  ######     ",
  "#####      #                 #",
- "         ####               ##",
- "        #####              ###",
- "       #####          #  ###  ",
- "      ###           ###       ",
- "##                 ###        ",
+ "                            ##",
+ "                           ###",
+ "       #   #             ###  ",
+ "       #####      #####       ",
+ "##                            ",
  "###          #                ",
- "####   #    ####         #    ",
+ "####        ####              ",
  "##############################"
 );
+
+var GAME_MAP2 = new Array(                   // Text version of the platform design
+ "                              ",
+ "                              ",
+ "                              ",
+ "###                 #      ###",
+ "   #                          ",
+ "    ##      ##### #  #        ",
+ "            #                 ",
+ "            #               ##",
+ "         ####              ###",
+ "#      ##          #       ###",
+ "#  #  #           ####        ",
+ "#                ### #        ",
+ "            #     ##          ",
+ "           ###                ",
+ "          #####             ##",
+ "              ##           ###",
+ "##             ###    #       ",
+ "###    #        #   ##        ",
+ "####   #         #########    ",
+ "#####  #  ##                 #",
+ "       #                    ##",
+ "       #                   ###",
+ "       #   #             ###  ",
+ "       #####      #####       ",
+ "##                            ",
+ "###          #                ",
+ "####        ####              ",
+ "###############################"
+);
+
+var GAME_MAP3 = new Array(                   // Text version of the platform design
+ "                              ",
+ "                              ",
+ "                              ",
+ "  ##                          ",
+ "                              ",
+ "#            #####    #       ",
+ "      #     #                 ",
+ "            #       #         ",
+ "          # #                 ",
+ "       #                    # ",
+ "                     #        ",
+ "    #            #  #         ",
+ "                  ##          ",
+ "             #                ",
+ "  #          ##             ##",
+ "                            ###",
+ "               ##    #        ",
+ "                #           ",
+ "   #            #  #  ###     ",
+ "   ##      #                 #",
+ "                            ##",
+ "                           ###",
+ "           #             ###  ",
+ "         #                    ",
+ "                              ",
+ "             #                ",
+ "   #   #    ####              ",
+ "##############################"
+);
+
+var GAME_MAP = GAME_MAP1;
 // TODO: Make a bullet object later
 var BULLET_SIZE = new Size(10, 10);         // The size of a bullet    
 var BULLET_SPEED = 10.0;                    // The speed of a bullet
@@ -200,8 +275,10 @@ bgSound.loop = true;
 var shootSound = new Audio("blaster-firing.wav");
 shootSound.volume = 0.5;
 var monsterSound = new Audio("monsterdies.wav");
-var exitPointSound = new Audio("r2d2-exitpt");
+var exitPointSound = new Audio("r2d2-exitpt.wav");
 var gameOverSound = new Audio("r2d2-die.wav");
+var restartSound = new Audio("dvader-restart.wav");
+var endGameSound = new Audio("endofgame.mid");
 
 //
 // The load function for the SVG document
@@ -220,24 +297,24 @@ function load(evt) {
 
     // Remove text nodes in the 'platforms' group
     cleanUpGroup("platforms", true);
-
+    
     // Set up the platforms
     createPlatforms();
 
     // Create the player
     player = new Player();
 
-    // Create the monsters
-    createMonsters();
-
-    // Create portal
-    createPortals();
-
     // Create disappearing platforms
     createFadingPlatforms();
 
     // Create exit door
     createExitDoor();
+
+    // Create the monsters
+    createMonsters();
+
+    // Create portal
+    createPortals();
 
     // Create good things
     createGoodThings();
@@ -248,8 +325,6 @@ function load(evt) {
 
     // Start the game interval
     gameInterval = setInterval("gamePlay()", GAME_INTERVAL);
-
-    bgSound.play();
 }
 
 
@@ -298,10 +373,13 @@ function keydown(evt) {
         // Activate cheat mode
         case "C".charCodeAt(0):
             cheatMode = true;
+            canShoot = true;
+             svgdoc.getElementById("ammo").firstChild.data = "INF";
             break;
         // Deactivate cheat mode
         case "V".charCodeAt(0):
             cheatMode = false;
+            svgdoc.getElementById("ammo").firstChild.data = ammunition;
             break;
     }
 }
@@ -370,6 +448,10 @@ function gamePlay() {
     player.position = position;
 
     moveMonsters();
+    
+    // createMonsterBullet();
+    // moveMonsterBullet();
+    
     moveBullets();
     moveVerticalPlatform();
 
@@ -478,7 +560,7 @@ function createPlatforms() {
                 platform.setAttribute("y", y * 20);
                 platform.setAttribute("width", (end - start + 1) * 20);
                 platform.setAttribute("height", 20);
-                platform.setAttribute("style", "fill:orange");
+                platform.setAttribute("style", "fill:rgb(0,205,205)");
 
                 platforms.appendChild(platform);
 
@@ -494,42 +576,109 @@ function createFadingPlatforms() {
     fadingPlatform1.setAttribute("y", 100);
     fadingPlatform1.setAttribute("width", 80);
     fadingPlatform1.setAttribute("height", 20);
-    fadingPlatform1.setAttribute("style", "fill:grey; fill-opacity:1");
+    fadingPlatform1.setAttribute("style", "fill:rgb(0,205,205); opacity:1;");
     svgdoc.getElementById("platforms").appendChild(fadingPlatform1);
     
     fadingPlatform2 = svgdoc.createElementNS("http://www.w3.org/2000/svg", "rect");
-    fadingPlatform2.setAttribute("x", 80);
-    fadingPlatform2.setAttribute("y", 220);
+    fadingPlatform2.setAttribute("x", 120);
+    fadingPlatform2.setAttribute("y", 300);
     fadingPlatform2.setAttribute("width", 80);
     fadingPlatform2.setAttribute("height", 20);
-    fadingPlatform2.setAttribute("style", "fill:grey; fill-opacity:1");
+    fadingPlatform2.setAttribute("style", "fill:rgb(0,205,205); opacity:1;");
     svgdoc.getElementById("platforms").appendChild(fadingPlatform2);
     
     fadingPlatform3 = svgdoc.createElementNS("http://www.w3.org/2000/svg", "rect");
     fadingPlatform3.setAttribute("x", 280);
-    fadingPlatform3.setAttribute("y", 420);
+    fadingPlatform3.setAttribute("y", 460);
     fadingPlatform3.setAttribute("width", 80);
     fadingPlatform3.setAttribute("height", 20);
-    fadingPlatform3.setAttribute("style", "fill:grey; fill-opacity:1");
+    fadingPlatform3.setAttribute("style", "fill:rgb(0,205,205); opacity:1;");
     svgdoc.getElementById("platforms").appendChild(fadingPlatform3);
 }
 
 function createMonsters() {
-    createMonster("monster1", 200, 40, motionType.LEFT, 100, false);
-    // createMonster(300,40, "monster2");
-    // createMonster(300,40, "monster3");
-    // createMonster(300,40, "monster4");
-    // createMonster(300,40, "monster5");
-    // createMonster(300,40, "monster6");
+    var platforms = svgdoc.getElementById("platforms");
+    var verticalPlatformX = parseInt(verticalPlatform.getAttribute("x"));
+    var verticalPlatformY = parseInt(verticalPlatform.getAttribute("y"));
+    var verticalPlatformW = parseInt(verticalPlatform.getAttribute("width"));
+    var verticalPlatformH = parseInt(verticalPlatform.getAttribute("height"));
+    var fadingPlatform1X = parseInt(fadingPlatform1.getAttribute("x"));
+    var fadingPlatform1Y = parseInt(fadingPlatform1.getAttribute("y"));
+    var fadingPlatform1W = parseInt(fadingPlatform1.getAttribute("width"));
+    var fadingPlatform1H = parseInt(fadingPlatform1.getAttribute("height"));
+    var fadingPlatform2X = parseInt(fadingPlatform2.getAttribute("x"));
+    var fadingPlatform2Y = parseInt(fadingPlatform2.getAttribute("y"));
+    var fadingPlatform2W = parseInt(fadingPlatform2.getAttribute("width"));
+    var fadingPlatform2H = parseInt(fadingPlatform2.getAttribute("height"));
+    var fadingPlatform3X = parseInt(fadingPlatform3.getAttribute("x"));
+    var fadingPlatform3Y = parseInt(fadingPlatform3.getAttribute("y"));
+    var fadingPlatform3W = parseInt(fadingPlatform3.getAttribute("width"));
+    var fadingPlatform3H = parseInt(fadingPlatform3.getAttribute("height"));
+    var exitDoor = svgdoc.getElementById("exitdoor").childNodes.item(0);
+    var exitX = parseInt(exitDoor.getAttribute("x"));
+    var exitY = parseInt(exitDoor.getAttribute("y"));
+    
+    var numOfMonsters = 0;
+    var special = false;
+
+    while(true) {
+        if (numOfMonsters == (7 + (currentLevel - 1) * 4)) break;
+        // Get a random number out of the pixels in the game area
+        var randomX = Math.floor(Math.random() * 30) * 20;
+        var randomY = Math.floor(Math.random() * 28) * 20;
+        var randomDir = Math.floor(Math.random() * 2);
+        var eligible = true;
+        for (var j = 0; j < platforms.childNodes.length; j++) {
+            var node = platforms.childNodes.item(j);
+            if (node.nodeName == "rect") {
+                var platX = parseInt(node.getAttribute("x"));
+                var platY = parseInt(node.getAttribute("y"));
+                var platW = parseInt(node.getAttribute("width"));
+                var platH = parseInt(node.getAttribute("height"));
+                // Not eligible if collide with the platform, the user, the fading platform, and vertical platform, exit door                
+                if(intersect(new Point(randomX,randomY), MONSTER_SIZE, new Point(platX, platY), new Size(platW, platH))  
+                    || intersect(new Point(randomX,randomY), MONSTER_SIZE, player.position, PLAYER_SIZE) 
+                    || intersect(new Point(randomX,randomY), MONSTER_SIZE, 
+                        new Point(verticalPlatformX, verticalPlatformY), new Size(verticalPlatformW, verticalPlatformH))
+                    || intersect(new Point(randomX, randomY), MONSTER_SIZE, 
+                        new Point(exitX, exitY), EXIT_SIZE)
+                    || intersect(new Point(randomX, randomY), GOOD_THING_SIZE, 
+                        new Point(fadingPlatform1X, fadingPlatform1Y), new Size(fadingPlatform1W, fadingPlatform1H))
+                    || intersect(new Point(randomX, randomY), GOOD_THING_SIZE, 
+                        new Point(fadingPlatform2X, fadingPlatform2Y), new Size(fadingPlatform2W, fadingPlatform2H))
+                    || intersect(new Point(randomX, randomY), GOOD_THING_SIZE, 
+                        new Point(fadingPlatform3X, fadingPlatform3Y), new Size(fadingPlatform3W, fadingPlatform3H)))  {
+                        eligible = false;
+                        break;
+                }
+            }
+        }
+
+        if (eligible == true) {    
+            ++numOfMonsters;
+            if(numOfMonsters == (7 + (currentLevel - 1) * 4))
+                special = true;
+            createMonster("monster" + numOfMonsters, randomX, randomY, randomDir, 50, special);
+        }
+    }
 }
 
 function createMonster(id, x, y, currDir, displacement, special) {
+    
     // The below codes are equivalent to <use x="x'" y="y'" xlink:href="#monster"/>
-    var monster = svgdoc.createElementNS("http://www.w3.org/2000/svg", "use");
+    var monster = svgdoc.createElementNS("http://www.w3.org/2000/svg", "use");     
     svgdoc.getElementById("monsters").appendChild(monster);
     monster.setAttribute("transform", "translate(" + x + "," + y +")");
     monster.setAttribute("id", id);
-    monster.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#monster");
+    
+    var value = "";
+    
+    if (special)
+        value = "#specialmonster";
+    else 
+        value = "#monster";
+
+    monster.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", value);
     
     var monsterObj = new Monster();
     monsterObj.node = svgdoc.getElementById(id);
@@ -557,24 +706,23 @@ function createPortal(x,y,id) {
 }
 
 function createGoodThings() {
-    var i = 0;
     var platforms = svgdoc.getElementById("platforms");
     var verticalPlatformX = parseInt(verticalPlatform.getAttribute("x"));
     var verticalPlatformY = parseInt(verticalPlatform.getAttribute("y"));
     var verticalPlatformW = parseInt(verticalPlatform.getAttribute("width"));
     var verticalPlatformH = parseInt(verticalPlatform.getAttribute("height"));
-    var fadingPlatform1X = parseInt(fadingPlatform1.getAttribute("x"));
-    var fadingPlatform1Y = parseInt(fadingPlatform1.getAttribute("y"));
-    var fadingPlatform1W = parseInt(fadingPlatform1.getAttribute("width"));
-    var fadingPlatform1H = parseInt(fadingPlatform1.getAttribute("height"));
-    var fadingPlatform2X = parseInt(fadingPlatform2.getAttribute("x"));
-    var fadingPlatform2Y = parseInt(fadingPlatform2.getAttribute("y"));
-    var fadingPlatform2W = parseInt(fadingPlatform2.getAttribute("width"));
-    var fadingPlatform2H = parseInt(fadingPlatform2.getAttribute("height"));
-    var fadingPlatform3X = parseInt(fadingPlatform3.getAttribute("x"));
-    var fadingPlatform3Y = parseInt(fadingPlatform3.getAttribute("y"));
-    var fadingPlatform3W = parseInt(fadingPlatform3.getAttribute("width"));
-    var fadingPlatform3H = parseInt(fadingPlatform3.getAttribute("height"));
+    // var fadingPlatform1X = parseInt(fadingPlatform1.getAttribute("x"));
+    // var fadingPlatform1Y = parseInt(fadingPlatform1.getAttribute("y"));
+    // var fadingPlatform1W = parseInt(fadingPlatform1.getAttribute("width"));
+    // var fadingPlatform1H = parseInt(fadingPlatform1.getAttribute("height"));
+    // var fadingPlatform2X = parseInt(fadingPlatform2.getAttribute("x"));
+    // var fadingPlatform2Y = parseInt(fadingPlatform2.getAttribute("y"));
+    // var fadingPlatform2W = parseInt(fadingPlatform2.getAttribute("width"));
+    // var fadingPlatform2H = parseInt(fadingPlatform2.getAttribute("height"));
+    // var fadingPlatform3X = parseInt(fadingPlatform3.getAttribute("x"));
+    // var fadingPlatform3Y = parseInt(fadingPlatform3.getAttribute("y"));
+    // var fadingPlatform3W = parseInt(fadingPlatform3.getAttribute("width"));
+    // var fadingPlatform3H = parseInt(fadingPlatform3.getAttribute("height"));
     var exitDoor = svgdoc.getElementById("exitdoor").childNodes.item(0);
     var exitX = parseInt(exitDoor.getAttribute("x"));
     var exitY = parseInt(exitDoor.getAttribute("y"));
@@ -599,12 +747,6 @@ function createGoodThings() {
                     || intersect(new Point(randomX,randomY), GOOD_THING_SIZE, player.position, PLAYER_SIZE) 
                     || intersect(new Point(randomX,randomY), GOOD_THING_SIZE, 
                         new Point(verticalPlatformX, verticalPlatformY), new Size(verticalPlatformW, verticalPlatformH))
-                    || intersect(new Point(randomX, randomY), GOOD_THING_SIZE, 
-                        new Point(fadingPlatform1X, fadingPlatform1Y), new Size(fadingPlatform1W, fadingPlatform1H))
-                    || intersect(new Point(randomX, randomY), GOOD_THING_SIZE, 
-                        new Point(fadingPlatform2X, fadingPlatform2Y), new Size(fadingPlatform2W, fadingPlatform2H))
-                    || intersect(new Point(randomX, randomY), GOOD_THING_SIZE, 
-                        new Point(fadingPlatform3X, fadingPlatform3Y), new Size(fadingPlatform3W, fadingPlatform3H))
                     || intersect(new Point(randomX, randomY), GOOD_THING_SIZE, 
                         new Point(exitX, exitY), EXIT_SIZE))  {
                         eligible = false;
@@ -636,10 +778,11 @@ function createExitDoor() {
 
 function shootBullet() {
 
-    if (ammunition == 0) {
+    if (ammunition == 0 && !cheatMode) {
         canShoot = false;
         return;
-    }
+    } 
+
     // Load and play sound effect for shooting
     shootSound.load();
     shootSound.play();
@@ -664,7 +807,8 @@ function shootBullet() {
     // Append the bullet to the bullet group
     svgdoc.getElementById("bullets").appendChild(bullet);
 
-    playerAmmo();
+    if (!cheatMode)
+        playerAmmo();
 }
 
 //
@@ -689,19 +833,66 @@ function moveBullets() {
     }
 }
 
+
+// function createMonsterBullet() {
+
+//     // Disable shooting for a short period of time
+//     var monsterShoot = false;
+//     setTimeout("monsterShoot = true", SHOOT_INTERVAL);
+
+//     // Create the bullet by creating a use node
+//     var bullet = svgdoc.createElementNS("http://www.w3.org/2000/svg", "use");
+    
+//     for (var i = 0; i < monsterArray.length; i++) {
+//         if (monsterArray[i].specialmonster) {
+//              // Calculate and set the position of the bullet
+//             var bulletX = monsterArray[i].position.x + SPECIAL_MONSTER_SIZE.w / 2 - BULLET_SIZE.w / 2 ;
+//             var bulletY = monsterArray[i].position.y + SPECIAL_MONSTER_SIZE.h / 2 - BULLET_SIZE.h / 2 ;
+//             bullet.setAttribute("x", bulletX);
+//             bullet.setAttribute("y", bulletY);
+//             bullet.setAttribute("id", "redBullet");
+//             bullet.setAttribute("direction", monsterArray[i].currentDir);
+            
+//             // Set the href of the use node to the bullet defined in the defs node
+//             bullet.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#monsterbullet");
+
+//             // Append the bullet to the bullet group
+//             svgdoc.getElementById("bullets").appendChild(bullet);
+//         }
+//     } 
+// }
+
+// function moveMonsterBullet() {
+//     var bullets = svgdoc.getElementById("bullets");
+//     var node = svgdoc.getElementById("redBullet");
+
+//     // Update the position of the bullet
+//     var x = parseInt(node.getAttribute("x"));
+
+//     if (node.getAttribute("direction") == motionType.RIGHT)
+//         node.setAttribute("x", x + BULLET_SPEED);
+//     else node.setAttribute("x", x - BULLET_SPEED);
+
+//     // If the bullet is not inside the screen delete it from the group
+//     if (x > SCREEN_SIZE.w || x < 0) {
+//         bullets.removeChild(node);
+//         i--;
+//     }
+// }
+
 //
 // This function moves the vertical platform
 //
 function moveVerticalPlatform() {
     var y = parseInt(verticalPlatform.getAttribute("y"));
     if(isVerticalPlatformUp) {
-        if(y > 100)
+        if(y > 50)
             verticalPlatform.setAttribute("y", y - 1);
         else
             isVerticalPlatformUp = false;
     }
     else {
-        if(y < 300)
+        if(y < 250)
             verticalPlatform.setAttribute("y", y + 1);
         else
             isVerticalPlatformUp = true;
@@ -745,25 +936,34 @@ function moveMonsters() {
 }
 
 function collisionDetection() {
-    // Check whether the player collides with a monster
-    for (var i = 0; i < monsterArray.length; i++) {
-        // For each monster check if it overlaps with the player
-        // if yes, stop the game
-        if (intersect(player.position, PLAYER_SIZE, 
-            monsterArray[i].position, MONSTER_SIZE))
-            gameOver();
+    
+    if (!cheatMode) {
+        // Check whether the player collides with a monster
+        for (var i = 0; i < monsterArray.length; i++) {
+            // For each monster check if it overlaps with the player
+            // if yes, stop the game
+            if (intersect(player.position, PLAYER_SIZE, 
+                monsterArray[i].position, MONSTER_SIZE))
+                gameOver();
+        }
     }
 
     // Check whether the player is on the disappearing platforms
-    if(fadingPlatform1 != null && (player.position.x + PLAYER_SIZE.w > 180 && player.position.x + PLAYER_SIZE.w < 260) && (player.position.y + PLAYER_SIZE.h == 100)) {
+    if(fadingPlatform1 != null && (player.position.x + PLAYER_SIZE.w > 180 
+        && player.position.x + PLAYER_SIZE.w < 260) 
+        && (player.position.y + PLAYER_SIZE.h == 100)) {
         removePlatform(fadingPlatform1);
         fadingPlatform1 = null;
     }
-    if(fadingPlatform2 != null && (player.position.x + PLAYER_SIZE.w > 80 && player.position.x + PLAYER_SIZE.w < 160) && (player.position.y + PLAYER_SIZE.h == 220)) {
+    if(fadingPlatform2 != null && (player.position.x + PLAYER_SIZE.w > 120 
+        && player.position.x + PLAYER_SIZE.w < 200) 
+        && (player.position.y + PLAYER_SIZE.h == 300)) {
         removePlatform(fadingPlatform2);
         fadingPlatform2 = null;
     }
-    if(fadingPlatform3 != null && (player.position.x + PLAYER_SIZE.w > 280 && player.position.x + PLAYER_SIZE.w < 360) && (player.position.y + PLAYER_SIZE.h == 420)) {
+    if(fadingPlatform3 != null && (player.position.x + PLAYER_SIZE.w > 280 
+        && player.position.x + PLAYER_SIZE.w < 360) 
+        && (player.position.y + PLAYER_SIZE.h == 460)) {
         removePlatform(fadingPlatform3);
         fadingPlatform3 = null;
     }
@@ -840,30 +1040,88 @@ function collisionDetection() {
     var exitY = parseInt(exit.getAttribute("y"));
     if(intersect(new Point(exitX, exitY), EXIT_SIZE, player.position, PLAYER_SIZE) 
         && goodThings.childNodes.length == 0) {
-        gameOver();
-        //exitPointSound.play();
-        // if(isZoomMode)
-        //     score = score + level * 100 + timeRemaining * 2;
-        // else
-        //     score = score + level * 100 + timeRemaining;
-        // svgdoc.getElementById("score").firstChild.data = score;
-        //initializeStage();
-      //  return;   
+        bgSound.pause();
+        bgSound.currentTime = 0;
+
+        exitPointSound.play();
+        updateScore(scoreType.NEXTLEVEL);
+        nextLevel();
     }
 }
 
+function nextLevel() {
+    currentLevel++;
+    if (currentLevel == 2)
+        GAME_MAP = GAME_MAP2;
+    if (currentLevel == 3)
+        GAME_MAP = GAME_MAP3;
+    if (currentLEvel == 4)
+        win();
+    player.position = new Point(0,0);
+
+    cleanUpGroup("monsters", false);
+    cleanUpGroup("bullets", false);
+    cleanUpGroup("platforms", false);
+    monsterArray = [];
+
+    createFadingPlatforms();
+    createPlatforms();
+    createMonsters();
+    createGoodThings();
+
+    timeRemaining = INITIAL_TIME_REMAINING;
+    ammunition = PLAYER_INIT_AMMO;
+
+    svgdoc.getElementById("ammo").firstChild.data = ammunition;
+    svgdoc.getElementById("level").firstChild.data = currentLevel;
+    // Start the timer
+    clearInterval(timeRemainingTimer);
+    timeRemainingTimer = setInterval("gameTime()", 1000);
+    bgSound.play();
+}
+
 function removePlatform(fadingPlatform) {
-    var animate = svgdoc.createElementNS("http://www.w3.org/2000/svg", "animateColor");
-    animate.setAttribute("attributeName", "fill");
+    var animate = svgdoc.createElementNS("http://www.w3.org/2000/svg", "animate");
+    animate.setAttribute("attributeName", "opacity");
     animate.setAttribute("attributeType", "CSS");
-    animate.setAttribute("from", "grey");
-    animate.setAttribute("to", "white");
+    animate.setAttribute("from", "1");
+    animate.setAttribute("to", "0");
     animate.setAttribute("begin", "0s");
     animate.setAttribute("dur", "0.5s");
-    animate.setAttribute("fill", "freeze");
     fadingPlatform.appendChild(animate);
-    //setTimeout(function(){disappearingPlatform.style.setAttribute("fill-opacity", disappearingPlatform.style.getAttribute("fill-opacity") - 0.1);}, 50);
-    setTimeout(function(){fadingPlatform.parentNode.removeChild(fadingPlatform);}, 500);
+    
+    setTimeout(function(){
+        fadingPlatform.parentNode.removeChild(fadingPlatform);
+    }, 500);
+}
+
+function win() {
+    bgSound.pause();
+    bgSound.currentTime = 0;
+    // Load and play sound effect for gameover
+    endGameSound.play();
+
+    clearInterval(gameInterval);
+    clearInterval(timeRemainingTimer);
+
+    var table = getHighScoreTable();
+
+    name = player.name;
+    var newRecord = new ScoreRecord(player.name, score);
+
+    // By default the new record should be pushed back to the back of the table
+    var order = table.length;
+    for (var i = 0; i < table.length; i++) {
+        if (newRecord.score > table[i].score) {
+            order = i;
+            break;
+        }
+    }
+
+    table.splice(order, 0, newRecord);
+
+    setHighScoreTable(table);
+    showHighScoreTable(table);
 }
 
 function updateScore(object) {
@@ -873,7 +1131,13 @@ function updateScore(object) {
         break;
     case scoreType.GOODTHING:
         score += 10;
-        console.log(score);
+        break;
+    case scoreType.NEXTLEVEL:
+        score += timeRemaining;
+        score += currentLevel * 100;
+        break;
+    case scoreType.RESTART:
+        score = 0;
         break;
     }
     svgdoc.getElementById("score").firstChild.data = score;
@@ -910,25 +1174,40 @@ function gameOver() {
 }
 
 function startGameAgain() {
+    restartSound.play();
     restartGame = true;
     cleanUpGroup("monsters", false);
+    monsterArray = [];
     cleanUpGroup("bullets", false);
+    cleanUpGroup("goodthings", false);
     cleanUpGroup("highscoretext", false);
+
+    player = new Player();
+
+    updateScore(scoreType.RESTART);
+    ammunition = PLAYER_INIT_AMMO;
+    svgdoc.getElementById("ammo").firstChild.data = ammunition;
+   // Hide highscore table
+    var highscoretable = svgdoc.getElementById("highscoretable");
+    highscoretable.style.setProperty("visibility", "hidden", null);
+
+    createFadingPlatforms();
+    createMonsters();
+    createGoodThings(); 
     startGame();
 }
 
 function startGame() {
+    bgSound.play();
 
     timeRemaining = INITIAL_TIME_REMAINING;
-    ammunition = PLAYER_INIT_AMMO;
+    if (!cheatMode)
+        ammunition = PLAYER_INIT_AMMO;
     canShoot = true;
 
     if (restartGame) {
-        // Hide highscore table
-        var highscoretable = svgdoc.getElementById("highscoretable");
-        highscoretable.style.setProperty("visibility", "hidden", null);
-
-        // Start the game interval
+        // Start the game intervald
+        clearInterval(gameInterval);
         gameInterval = setInterval("gamePlay()", GAME_INTERVAL);
 
         svgdoc.getElementById("time").firstChild.data = timeRemaining;
@@ -942,7 +1221,7 @@ function startGame() {
     name = prompt("Please enter your name", name);
     if (name == "" || name == null || !name)
         name = "Anonymous";
-
+    player.name = name;
     // Display the player name
     nameTag = svgdoc.getElementById("player_name");
     nameTag.firstElementChild.textContent = name;
@@ -954,7 +1233,13 @@ function startGame() {
 
     enterPortal = false;
 
-    svgdoc.getElementById("ammo").firstChild.data = ammunition;
+    if (!cheatMode)
+        svgdoc.getElementById("ammo").firstChild.data = ammunition;
+    else
+        svgdoc.getElementById("ammo").firstChild.data = "INF";
+
     // Start the timer
     timeRemainingTimer = setInterval("gameTime()", 1000);
+    currentLevel = 1;
+    svgdoc.getElementById("level").firstChild.data = currentLevel;
 }
