@@ -451,7 +451,6 @@ function gamePlay() {
 
     moveMonsters();
 
-    //monsterCanShoot = true;
     setTimeout("monsterCanShoot=true",10000);
     
     if (monsterCanShoot)

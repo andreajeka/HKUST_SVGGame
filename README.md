@@ -29,7 +29,7 @@ collected player can finish the game or get to the next level.
     3. [ ] Some appropriate animation of monsters (using any SVG animation command except animateColor) - 2 marks
     4. [x] The monster move smoothly from one random location to another random location - 2marks
     5. [x] Flip monster when move left/right - 2 marks
-    6. [ ] There has to be exactly one special monster which can shoot bullet. There has at most one bullet in game window from the monster at a time- 2 marks
+    6. [x] There has to be exactly one special monster which can shoot bullet. There has at most one bullet in game window from the monster at a time- 2 marks
 4. [x] Handling of good things - 6%
     1. [x] There must be at least 8 good things
     2. [x] Appropriate visual impact - 1 mark
