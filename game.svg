@@ -602,6 +602,8 @@
         <g id="goodthings"/>
 
         <g id="exitdoor"/>
+
+        <g id="specialbullet" />
         <!-- -->
 
         <g id="startscreen" transform="translate(40,40)">
