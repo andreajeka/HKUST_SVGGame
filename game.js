@@ -271,7 +271,6 @@ var cheatMode = false;
 var playerWins = false;
 
 // Sound Effects
-var startSound = new Audio("theme.wav")
 var bgSound = new Audio("bg.wav");
 bgSound.volume = 0.5;
 bgSound.loop = true;

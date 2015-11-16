@@ -619,7 +619,7 @@
           <text x="260" y="310" style="fill:black;font-size:20px;font-weight:bold;text-anchor:middle">Z - Jump</text>
           <text x="260" y="330" style="fill:black;font-size:20px;font-weight:bold;text-anchor:middle">Space - Shoot </text>
           <text x="260" y="350" style="fill:black;font-size:20px;font-weight:bold;text-anchor:middle">C - Cheat Mode, V - Normal Mode </text>
-          <text x="260" y="400" style="fill:black;font-size:30px;font-weight:bold;text-anchor:middle">KURNIASARI, Andrea Juliati | 3498</text>
+          <text x="260" y="400" style="fill:black;font-size:30px;font-weight:bold;text-anchor:middle">by KURNIASARI, Andrea Juliati</text>
           <g onclick="top.startGame()">
             <rect class="button" x="160" y="420" width="200" height="50" rx="10" ry="10" style="fill:rgb(0,205,205);stroke:rgb(0,205,205);stroke-width:2"/>
             <text x="260" y="455" style="fill:black;font-size:30px;font-weight:bold;text-anchor:middle">Start Game</text>
